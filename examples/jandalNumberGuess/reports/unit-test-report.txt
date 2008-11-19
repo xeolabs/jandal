@@ -1,0 +1,105 @@
+
+JandalTest {
+    
+    startApplication
+    
+    
+        JandalTest {
+            baseControllerPath: frameController.gameController
+            
+            //// Guess too low
+
+            assertState
+                state = guessingState
+            
+            checkTemplate
+                outputName = template
+                expectedFileName = guess.ftl
+            
+            
+            fireViewEvent
+                eventName = guess
+                parameters:
+                    number = 2
+            
+            assertState
+                state = incorrectState
+            
+            checkTemplate
+                outputName = template
+                expectedFileName = incorrect.ftl
+            
+            getOutput(outputName="message")
+            
+            
+            fireViewEvent
+                eventName = playAgain
+            
+            assertState
+                state = guessingState
+            
+        }
+    restartApplication
+    
+    
+        JandalTest {
+            baseControllerPath: frameController.gameController
+            
+            //// Guess too high
+
+            assertState
+                state = guessingState
+            
+            
+            fireViewEvent
+                eventName = guess
+                parameters:
+                    number = 24
+            
+            assertState
+                state = incorrectState
+            
+            getOutput(outputName="message")
+            
+            
+            fireViewEvent
+                eventName = playAgain
+            
+            assertState
+                state = guessingState
+            
+        }
+    restartApplication
+    
+    
+        JandalTest {
+            baseControllerPath: frameController.gameController
+            
+            //// Guess correctly
+
+            assertState
+                state = guessingState
+            
+            
+            fireViewEvent
+                eventName = guess
+                parameters:
+                    number = 5
+            
+            assertState
+                state = correctState
+            
+            checkTemplate
+                outputName = template
+                expectedFileName = correct.ftl
+            
+            
+            fireViewEvent
+                eventName = playAgain
+            
+            assertState
+                state = guessingState
+            
+        }
+}
+

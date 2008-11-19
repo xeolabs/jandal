@@ -1,0 +1,190 @@
+<project name="JandalNumberGuess" basedir="../" default="build">
+
+	<!-- 	Project properties - the second of these properties files
+			holds the version number for this release.
+	-->
+	<property file="${basedir}/ant/build.properties"/>
+	<property file="${basedir}/ant/build.version.properties"/>
+
+
+	<!-- Local system paths -->
+	<property name="src.dir" 			value="${basedir}/src"/>
+	<property name="lib.dir" 			value="${basedir}/lib"/>
+	<property name="classes.dir" 		value="${basedir}/classes"/>
+	<property name="jar.dir" 			value="${basedir}/jar"/>
+	<property name="reports.dir" 		value="${basedir}/reports" />
+	<property name="war.dir" 			value="${basedir}/war" />
+	<property name="meta-inf.dir"		value="${basedir}/META-INF"/>
+	<property name="web-inf.dir"		value="${basedir}/WEB-INF"/>
+	<property name="jetty.home" 		value="${basedir}/jetty-6.1.6" />
+	<property name="deploy.dir" 		value="${jetty.home}/webapps" />
+	<property name="deployed-app.dir" 	value="${deploy.dir}/${project.distName}"/>
+	
+   	<path id="compile.classpath">
+		<pathelement path ="${lib.dir}/jandal-${project.version}.jar"/>
+		<pathelement path ="${lib.dir}/commons-fileupload-1.1.1.jar"/>
+		<pathelement path ="${lib.dir}/commons-io-1.2.jar"/>
+		<pathelement path ="${lib.dir}/servlet-api-2.5-6.1.6.jar"/>
+		<pathelement path ="${lib.dir}/freemarker.jar"/>
+		<pathelement path ="${classpath}"/>
+	</path>
+
+	<target name="clean" description="Prepare for clean build">
+		<delete includeemptydirs="true">
+  			<fileset dir="${classes.dir}" includes="**/*" />
+		</delete>
+		<delete includeemptydirs="true">
+  			<fileset dir="${jar.dir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<target name="prepare">
+		<tstamp/>
+	</target>
+
+	<target name="resources">
+		<copy todir="${classes.dir}" includeEmptyDirs="no">
+			<fileset dir="${src.dir}">
+				<patternset>
+					<exclude name="**/*.java"/>
+				</patternset>
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="build" depends="clean,prepare,resources">
+		<javac srcdir="${src.dir}" destdir="${classes.dir}" debug="${project.debug}">
+			<classpath refid="compile.classpath"/> 
+		</javac>
+
+		<delete includeemptydirs="true">
+  			<fileset dir="${jar.dir}" includes="**/*" />
+		</delete>
+
+		<jar destfile="${jar.dir}/${project.distName}.jar" basedir="${classes.dir}" includes="**" excludes="">
+			<manifest>
+				<attribute name="Author" value="${author.name}"/>
+				<section name="Shared">
+					<attribute name="Title" value="${project.title}"/>
+					<attribute name="Vendor" value="${company.name}"/>
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) ${company.name} 2006"/>
+				</section>
+			</manifest>
+		</jar>
+	</target>
+
+	<!-- Unit test the application and generate test report -->
+
+	<target name="test" depends="build" if="project.testClass">
+		<taskdef 
+			name="testTask" 
+			classname="com.neocoders.jandal.testing.ant.JandalUnitTask"
+			classpath="${lib.dir}/jandal-${project.version}.jar:${jar.dir}/${project.distName}.jar"/> 
+		<testTask
+			testClass="${project.testClass}"
+			applicationClass="${project.applicationClass}"
+			serviceSetClass="${project.serviceSetClass}"
+			reportFile="${reports.dir}/${project.unitTestReportFile}"/>
+	</target>
+
+	<target name="package" depends="test">
+		<sequential>
+			<delete includeemptydirs="true">
+  				<fileset dir="${war.dir}" includes="**/*" />
+			</delete>
+
+			<war destfile="${war.dir}/${project.distName}.war" 
+				webxml="${web-inf.dir}/web.xml">
+				<!-- <fileset dir="${web-inf.dir}/html"/> -->
+				<classes dir="${classes.dir}"/>	
+				<lib dir="${lib.dir}"/>		
+				<metainf dir="${meta-inf.dir}"/>
+			</war>
+		</sequential>
+	</target>
+
+
+	<!-- Get the status of the bundled Jetty server -->
+
+	<target name="jetty-check-status">
+    	<condition property="jetty.started">
+       	 <socket server="localhost" port="8080"/>
+    	</condition>
+	</target>
+
+	<!-- Start up the Jetty server, stopping first if already started -->
+
+	<target name="jetty-start">
+		<sequential>
+   	     	<antcall target="jetty-stop"/>
+   		     <java jar="${jetty.home}/start.jar" fork="true" dir="${jetty.home}">
+     		       <jvmarg value="-Dfile.encoding=UTF-8"/>
+      		      	<jvmarg value="-DSTOP.PORT=8079"/>
+       		     	<jvmarg value="-DSTOP.KEY=secret"/>
+      		  </java>
+    	</sequential>
+	</target>
+
+	<!-- Start up Jetty server in debug mode -->
+
+	<target name="jetty-start-debug">
+		<sequential>
+    	    	<antcall target="jetty-stop"/>
+    	    	<java jar="${jetty.home}/start.jar" fork="true" dir="${jetty.home}">
+    	        <jvmarg value="-Dfile.encoding=UTF-8"/>
+    	        <jvmarg value="-DSTOP.PORT=8079"/>
+    	        <jvmarg value="-DSTOP.KEY=secret"/>
+     	       	<jvmarg value="-Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"/>
+     	       	<jvmarg value="-Xdebug"/>
+   		     </java>
+    	</sequential>
+	</target> 
+
+	<!-- Stop the Jetty server -->
+
+	<target name="jetty-stop" depends="jetty-check-status" if="jetty.started">
+    	<java jar="${jetty.home}/start.jar" fork="true" dir="${jetty.home}">
+        	<jvmarg value="-DSTOP.PORT=8079"/>
+        	<jvmarg value="-DSTOP.KEY=secret"/>
+        	<arg value="--stop"/>
+    	</java>
+    	<sleep seconds="2"/>
+	</target>
+
+	
+	<!-- Deploy to the bundled Jetty server -->
+
+	<target name="deploy" depends="package">
+		<sequential>
+			<antcall target="jetty-stop"/>
+
+			<delete dir="${deployed-app.dir}"/>
+			<mkdir  dir="${deployed-app.dir}"/>
+			<mkdir  dir="${deployed-app.dir}/WEB-INF"/>
+			<mkdir  dir="${deployed-app.dir}/WEB-INF/classes"/>
+			<mkdir  dir="${deployed-app.dir}/WEB-INF/lib"/>
+	 		<copy todir="${deployed-app.dir}/WEB-INF" includeEmptyDirs="yes">
+				<fileset dir="${web-inf.dir}"/>
+			</copy>
+			<copy todir="${deployed-app.dir}/WEB-INF/classes" includeEmptyDirs="yes">
+				<fileset dir="${classes.dir}"/>
+			</copy>
+			<copy todir="${deployed-app.dir}/WEB-INF/lib" includeEmptyDirs="yes">
+				<fileset dir="${lib.dir}"/>
+			</copy>
+		</sequential>
+	</target>
+
+
+	<target name="run">
+		<sequential>
+			<antcall target="jetty-stop"/>
+			<antcall target="deploy"/>
+			<antcall target="jetty-start"/>
+		</sequential>
+	</target>
+
+</project>
+
