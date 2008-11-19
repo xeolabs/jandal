@@ -1,0 +1,101 @@
+<project name="Jandal" basedir="../" default="build">
+
+	<!-- 	Project properties - the second of these properties files
+			holds the version number for this release.
+	-->
+	<property file="ant/build.properties"/>
+	<property file="ant/build.version.properties"/>
+
+
+	<!-- Local system paths -->
+	<property name="src.dir" value="${basedir}/src"/>
+	<property name="lib.dir" value="${basedir}/lib"/>
+	<property name="classes.dir" value="${basedir}/classes"/>
+	<property name="jar.dir" value="${basedir}/jar"/>
+	<property name="docs.dir" value="${basedir}/docs" />
+	
+	<!-- classpath -->
+   	<path id="compile.classpath">
+		<pathelement path ="${lib.dir}/commons-fileupload-1.1.1.jar"/>
+		<pathelement path ="${lib.dir}/commons-io-1.2.jar"/>
+		<pathelement path ="${lib.dir}/servlet-api-2.5-6.1.6.jar"/>
+		<pathelement path ="${lib.dir}/freemarker.jar"/>
+		<pathelement path ="${lib.dir}/ant-1.6.5.jar"/>
+		<pathelement path ="${classpath}"/>
+	</path>
+
+	<!-- Remove classes directory for clean build -->
+	<target name="clean" description="Prepare for clean build">
+		<delete includeemptydirs="true">
+  			<fileset dir="${classes.dir}" includes="**/*" />
+		</delete>
+		<delete includeemptydirs="true">
+  			<fileset dir="${docs.dir}" includes="**/*" />
+		</delete>
+		<delete includeemptydirs="true">
+  			<fileset dir="${jar.dir}" includes="**/*" />
+		</delete>
+	</target>
+
+	<!-- Check timestamp on files -->
+	<target name="prepare">
+		<tstamp/>
+	</target>
+
+	<!-- Copy any resource or configuration files into classes directory-->
+	<target name="resources">
+		<copy todir="${classes.dir}" includeEmptyDirs="no">
+			<fileset dir="${src.dir}">
+				<patternset>
+					<exclude name="**/*.java"/>
+				</patternset>
+			</fileset>
+		</copy>
+	</target>
+
+	<!-- Normal build -->
+	<target name="build" depends="clean,prepare,resources">
+		<javac srcdir="${src.dir}" destdir="${classes.dir}">
+			<classpath refid="compile.classpath"/> 
+			<compilerarg value="-Xlint"/>
+		</javac>
+
+		<delete includeemptydirs="true">
+  			<fileset dir="${jar.dir}" includes="**/*" />
+		</delete>
+
+		<jar destfile="${jar.dir}/${project.distname}-${project.version}.jar" basedir="${classes.dir}" includes="**" excludes="">
+			<manifest>
+				<attribute name="Author" value="${author.name}"/>
+				<section name="Shared">
+					<attribute name="Title" value="${project.title}"/>
+					<attribute name="Vendor" value="${company.name}"/>
+				</section>
+				<section name="Copyright">
+					<attribute name="Copy" value="(C) ${company.name} 2006"/>
+				</section>
+			</manifest>
+		</jar>
+
+
+	</target>
+
+	<!-- Make documentation -->
+	<target name="javadocs" >
+		<mkdir dir="${docs.dir}"/>
+		<javadoc 	packagenames="${project.packagenames}"
+			 		sourcepath="${src.dir}"
+			 		destdir="${docs.dir}"
+			 		author="true"
+			 		version="true"
+					private="false"
+					protected="true"
+			 		use="true"
+			 		doctitle="${project.title} ${project.version}"
+			 		windowtitle="${project.title}"
+			 		bottom="Copyright (C); 2006 ${company.name}. All Rights Reserved.">
+			<classpath refid="compile.classpath"/>
+		</javadoc>
+	</target>
+</project>
+
