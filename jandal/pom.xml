@@ -1,0 +1,31 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.neocoders.jandal</groupId>
+    <artifactId>jandal</artifactId>
+    <packaging>pom</packaging>
+    <name>Jandal Web Application Framework</name>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <scm>
+        <developerConnection>scm:svn:http://www.neocoders.com/svn/repos/jandal/trunk/</developerConnection>
+    </scm>
+
+ <distributionManagement>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>neocoders-releases</id>
+            <url>http://www.neocoders.com/nexus/content/repositories/releases</url>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>neocoders-snapshots</id>
+            <url>http://www.neocoders.com/nexus/content/repositories/snapshots</url>
+        </snapshotRepository>                                                
+    </distributionManagement>
+
+    <modules>
+        <module>framework</module>
+        <module>examples</module>
+    </modules>
+
+</project>

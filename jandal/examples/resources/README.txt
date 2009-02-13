@@ -1,0 +1,1 @@
+Resources for testing or bundling with example apps, such as configured Jetty/Tomcat servers 
